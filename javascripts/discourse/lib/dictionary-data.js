@@ -540,6 +540,39 @@ export async function loadFromUrl(url, { fetchText }) {
 }
 
 /**
+ * A finished load may update the page only while that page is still open.
+ * Leaving /dictionary aborts the request; that is not a load error.
+ */
+export function shouldApplyDictionaryLoad(component, error) {
+  if (!component || component.isDestroying || component.isDestroyed) {
+    return false;
+  }
+  if (error && error.name === "AbortError") {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Apply a dictionary load, or drop it when the page has gone away.
+ * `ready` receives the entries. `failed` receives the load error.
+ */
+export async function applyDictionaryLoad(component, pending, handlers) {
+  try {
+    const entries = await pending;
+    if (!shouldApplyDictionaryLoad(component)) {
+      return;
+    }
+    handlers.ready(entries);
+  } catch (error) {
+    if (!shouldApplyDictionaryLoad(component, error)) {
+      return;
+    }
+    handlers.failed(error);
+  }
+}
+
+/**
  * Load entries from a topic and/or a URL. The topic is tried first when
  * both are set; the URL is the fallback.
  */
@@ -589,21 +622,48 @@ function assertBodySize(text) {
   }
 }
 
-async function fetchResponse(path, fetchImpl, timeoutMs) {
+function abortedRequest() {
+  const error = new Error("The dictionary data request was aborted.");
+  error.name = "AbortError";
+  return error;
+}
+
+async function fetchResponse(path, fetchImpl, timeoutMs, externalSignal) {
+  if (externalSignal && externalSignal.aborted) {
+    throw abortedRequest();
+  }
   const fetchFn = fetchImpl || fetch;
   const controller = typeof AbortController === "undefined" ? null : new AbortController();
+  let timedOut = false;
   const timer = controller
-    ? setTimeout(() => controller.abort(), timeoutMs ?? FETCH_TIMEOUT_MS)
+    ? setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, timeoutMs ?? FETCH_TIMEOUT_MS)
     : null;
+  let onExternalAbort = null;
+  if (
+    externalSignal &&
+    controller &&
+    typeof externalSignal.addEventListener === "function"
+  ) {
+    onExternalAbort = () => controller.abort();
+    externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+  }
   try {
     const options = { credentials: "same-origin" };
     if (controller) {
       options.signal = controller.signal;
+    } else if (externalSignal) {
+      options.signal = externalSignal;
     }
     return await fetchFn(path, options);
   } catch (err) {
     if (err instanceof DictionaryLoadError) {
       throw err;
+    }
+    if (externalSignal && externalSignal.aborted && !timedOut) {
+      throw abortedRequest();
     }
     if (err && (err.name === "AbortError" || err.name === "TimeoutError")) {
       throw new DictionaryLoadError(
@@ -616,11 +676,14 @@ async function fetchResponse(path, fetchImpl, timeoutMs) {
     if (timer) {
       clearTimeout(timer);
     }
+    if (onExternalAbort) {
+      externalSignal.removeEventListener("abort", onExternalAbort);
+    }
   }
 }
 
 export async function defaultFetchJson(path, fetchImpl, options = {}) {
-  const res = await fetchResponse(path, fetchImpl, options.timeoutMs);
+  const res = await fetchResponse(path, fetchImpl, options.timeoutMs, options.signal);
   if (!res.ok) {
     const err = new Error(`HTTP ${res.status}`);
     err.status = res.status;
@@ -639,7 +702,7 @@ export async function defaultFetchJson(path, fetchImpl, options = {}) {
 }
 
 export async function defaultFetchText(path, fetchImpl, options = {}) {
-  const res = await fetchResponse(path, fetchImpl, options.timeoutMs);
+  const res = await fetchResponse(path, fetchImpl, options.timeoutMs, options.signal);
   if (!res.ok) {
     const err = new Error(`HTTP ${res.status}`);
     err.status = res.status;

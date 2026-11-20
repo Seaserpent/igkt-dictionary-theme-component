@@ -222,14 +222,32 @@ export function buildTableModel({ entries, from, to, cat, query, letter }) {
   const result = filterAndSort({ entries, from, cat, query, letter });
   const showAnchors = !result.letter && !fold((query || "").trim());
   const items = [];
+  const usedKeys = new Set();
+  // The same entry must keep the same key when the model is rebuilt, so the
+  // table can reuse that row. A repeated id still gets its own row.
+  const claimKey = (base) => {
+    let key = base;
+    let n = 2;
+    while (usedKeys.has(key)) {
+      key = `${base}#${n}`;
+      n += 1;
+    }
+    usedKeys.add(key);
+    return key;
+  };
   let current = "";
   for (const entry of result.rows) {
     const c = letterOf(entry, from);
     if (showAnchors && c && c !== current) {
       current = c;
-      items.push({ type: "anchor", letter: c });
+      items.push({ type: "anchor", letter: c, rowKey: claimKey(`anchor:${c}`) });
     }
-    items.push({ type: "entry", entry });
+    const id = entry && entry.id ? String(entry.id) : "";
+    items.push({
+      type: "entry",
+      entry,
+      rowKey: claimKey(id ? `entry:${id}` : "entry"),
+    });
   }
   return Object.assign({}, result, { items, to, from });
 }
