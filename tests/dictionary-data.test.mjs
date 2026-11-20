@@ -89,6 +89,32 @@ test("exporter keeps invented per-term source ids", async (t) => {
   assert.deepEqual(loaded[0].terms, { en: ["paper moon knot (example)"] });
 });
 
+test("exporter copies term lists and does not split a string terms value", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "igkt-term-shape-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const source = join(dir, "example-source.json");
+  await writeFile(source, JSON.stringify([{
+    id: "example-term-shape",
+    category: "term",
+    terms: {
+      en: ["paper moon knot (example)"],
+      de: "papier mond (Beispiel)",
+    },
+  }]));
+  execFileSync("python3", [
+    fileURLToPath(new URL("tools/export_data.py", root)),
+    source,
+    "--outdir",
+    join(dir, "posts"),
+    "--max-chars",
+    "4000",
+  ]);
+  const exported = JSON.parse(await readFile(join(dir, "posts", "dictionary.json"), "utf8"));
+  assert.deepEqual(exported[0].terms, { en: ["paper moon knot (example)"] });
+  const post = await readFile(join(dir, "posts", "post-1.md"), "utf8");
+  assert.doesNotMatch(post, /"de":\[/);
+});
+
 test("malformed, gapped and oversized dictionary payloads are reported", async () => {
   assert.throws(
     () => data.parsePayload("```igkt-dictionary\n{\"v\":9,\"part\":1,\"parts\":1}\n{\"id\":\"example-x\",\"terms\":{\"en\":[\"paper moon knot (example)\"]}}\n```"),
