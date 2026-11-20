@@ -110,3 +110,120 @@ test("category, missing-language and column-selection behaviour is preserved", (
   assert.deepEqual(logic.adjustToLanguages("en", "sv", ["sv", "fr"]), ["en", "fr"]);
   assert.equal(logic.defaultToLanguages("en").length, 5);
 });
+
+test("the no-term count follows the letter filter as well as search and category", () => {
+  const invented = logic.prepareEntries([
+    {
+      id: "example-o-loop",
+      category: "knot",
+      terms: {
+        en: ["island loop (example)"],
+        sv: ["ö-ögla (exempel)"],
+      },
+    },
+    {
+      id: "example-b-loop",
+      category: "knot",
+      terms: {
+        en: ["blue loop (example)"],
+        sv: ["blå ögla (exempel)"],
+      },
+    },
+    {
+      id: "example-no-sv-knot",
+      category: "knot",
+      terms: {
+        en: ["orphan loop (example)"],
+        de: ["Waisenögla (Beispiel)"],
+      },
+    },
+    {
+      id: "example-no-sv-bend",
+      category: "bend",
+      terms: {
+        en: ["orphan bend (example)"],
+      },
+    },
+    {
+      id: "example-no-sv-zebra",
+      category: "hitch",
+      terms: {
+        en: ["zebra orphan hitch (example)"],
+        fi: ["seeprakiinnitys (esimerkki)"],
+      },
+    },
+  ]);
+  const countText = (model) =>
+    model.missing
+      ? `${model.rows.length} of ${invented.length} entries · ${model.missing} more match but have no Svenska term`
+      : `${model.rows.length} of ${invented.length} entries`;
+  const view = (overrides) =>
+    logic.buildTableModel({
+      entries: invented,
+      from: "sv",
+      to: ["en"],
+      cat: "",
+      query: "",
+      letter: "",
+      ...overrides,
+    });
+
+  const all = view({});
+  assert.deepEqual(
+    all.rows.map((entry) => entry.id),
+    ["example-b-loop", "example-o-loop"]
+  );
+  assert.equal(all.missing, 3);
+  assert.equal(countText(all), "2 of 5 entries · 3 more match but have no Svenska term");
+
+  const letterO = view({ letter: "Ö" });
+  assert.equal(letterO.letter, "Ö");
+  assert.deepEqual(letterO.rows.map((entry) => entry.id), ["example-o-loop"]);
+  assert.equal(letterO.missing, 0);
+  assert.equal(countText(letterO), "1 of 5 entries");
+
+  const letterB = view({ letter: "B" });
+  assert.equal(letterB.missing, 0);
+  assert.deepEqual(letterB.rows.map((entry) => entry.id), ["example-b-loop"]);
+
+  const bend = view({ cat: "bend" });
+  assert.equal(bend.rows.length, 0);
+  assert.equal(bend.missing, 1);
+  assert.equal(countText(bend), "0 of 5 entries · 1 more match but have no Svenska term");
+
+  const knotAndO = view({ cat: "knot", letter: "Ö" });
+  assert.deepEqual(knotAndO.rows.map((entry) => entry.id), ["example-o-loop"]);
+  assert.equal(knotAndO.missing, 0);
+
+  const zebra = view({ query: "zebra" });
+  assert.equal(zebra.rows.length, 0);
+  assert.equal(zebra.missing, 1);
+
+  const orphan = view({ query: "orphan" });
+  assert.equal(orphan.rows.length, 0);
+  assert.equal(orphan.missing, 3);
+
+  const ogla = view({ query: "ögla" });
+  assert.deepEqual(
+    ogla.rows.map((entry) => entry.id),
+    ["example-b-loop", "example-o-loop"]
+  );
+  assert.equal(ogla.missing, 1);
+
+  const oglaAndO = view({ query: "ögla", letter: "Ö" });
+  assert.equal(oglaAndO.letter, "Ö");
+  assert.deepEqual(oglaAndO.rows.map((entry) => entry.id), ["example-o-loop"]);
+  assert.equal(oglaAndO.missing, 0);
+  assert.equal(countText(oglaAndO), "1 of 5 entries");
+
+  // A letter that the current search removes from the bar is not active.
+  const orphanAndO = view({ query: "orphan", letter: "Ö" });
+  assert.equal(orphanAndO.letter, "");
+  assert.equal(orphanAndO.rows.length, 0);
+  assert.equal(orphanAndO.missing, 3);
+
+  const unusedLetter = view({ letter: "Q" });
+  assert.equal(unusedLetter.letter, "");
+  assert.equal(unusedLetter.rows.length, 2);
+  assert.equal(unusedLetter.missing, 3);
+});

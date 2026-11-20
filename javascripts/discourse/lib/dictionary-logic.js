@@ -175,6 +175,8 @@ export function adjustToLanguages(previousFrom, nextFrom, currentTo) {
  * Filter, sort and group entries for the current UI state.
  * Sorting and the A–Z bar use the source-language locale, so when
  * From is Swedish the letters Å, Ä and Ö come after Z.
+ * `missing` counts entries with no source-language term that still
+ * match the category, search and letter filters.
  */
 export function filterAndSort({ entries, from, cat, query, letter }) {
   const q = fold((query || "").trim());
@@ -225,7 +227,13 @@ export function filterAndSort({ entries, from, cat, query, letter }) {
     ? base.filter((entry) => letterOf(entry, from) === activeLetter)
     : base;
 
-  const missing = entries.filter((entry) => matchesFilters(entry, false)).length;
+  // No source-language term means no letter, so a selected letter excludes them.
+  const missing = entries.filter((entry) => {
+    if (!matchesFilters(entry, false)) {
+      return false;
+    }
+    return !activeLetter || letterOf(entry, from) === activeLetter;
+  }).length;
 
   return {
     rows,
