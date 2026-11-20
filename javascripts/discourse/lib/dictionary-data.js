@@ -450,7 +450,10 @@ export async function loadFromTopic(topicId, { fetchJson, fetchText }) {
       if (err instanceof DictionaryLoadError) {
         throw err;
       }
-      if (err && err.status === 404) {
+      // 404 is a deleted post number. 403 is a post this visitor cannot
+      // read, such as a staff whisper. Either way only that post is absent.
+      // A 403 on the topic JSON itself is still an error, above.
+      if (err && (err.status === 404 || err.status === 403)) {
         continue;
       }
       if (err && err.status) {
