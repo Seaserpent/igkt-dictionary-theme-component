@@ -183,6 +183,21 @@ test("malformed, gapped and oversized dictionary payloads are reported", async (
   await assert.rejects(data.defaultFetchText("/big", huge), (error) => error.code === "malformed");
 });
 
+test("an out-of-range character reference in a link does not blank the footnote", () => {
+  const kept = sanitizeSourcesHtml(
+    '<p><a href="https://example.test/&#x110000;knot">example knot</a></p>'
+  );
+  assert.match(kept, /href="https:\/\/example.test\/&amp;#x110000;knot"/);
+  assert.match(kept, /example knot/);
+
+  const dropped = sanitizeSourcesHtml('<p><a href="&#1114112;">kept label</a></p>');
+  assert.equal(dropped, "<p>kept label</a></p>");
+
+  const blocked = sanitizeSourcesHtml('<a href="javascript&#x110000;:alert(1)">x</a>');
+  assert.doesNotMatch(blocked, /href=/);
+  assert.doesNotMatch(blocked, /javascript/i);
+});
+
 test("sources footnote keeps credits and drops active markup", async () => {
   const note = sanitizeSourcesHtml(
     '<p><strong>Sources.</strong> <a href="https://www.wikidata.org/" onclick="alert(1)">Wikidata</a> <em>example</em></p><script>alert(1)</script><a href="javascript:alert(1)">click</a><a href="&#106;avascript:alert(1)">also</a>'

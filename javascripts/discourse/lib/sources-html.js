@@ -7,16 +7,18 @@
 const ALLOWED = new Set(["p", "a", "strong", "em", "br"]);
 const DROP_BLOCKS = ["script", "style", "iframe", "object", "embed", "svg", "math", "template", "noscript"];
 
+function decodeCodePoint(code) {
+  // fromCodePoint throws RangeError above U+10FFFF and blanks the page.
+  if (!Number.isInteger(code) || code < 0 || code > 0x10ffff) {
+    return "";
+  }
+  return String.fromCodePoint(code);
+}
+
 function decodeEntities(value) {
   return String(value)
-    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
-      const code = parseInt(hex, 16);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : "";
-    })
-    .replace(/&#([0-9]+);?/g, (_, num) => {
-      const code = Number(num);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : "";
-    })
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => decodeCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);?/g, (_, num) => decodeCodePoint(Number(num)))
     .replace(/&colon;/gi, ":")
     .replace(/&tab;/gi, "")
     .replace(/&newline;/gi, "")
