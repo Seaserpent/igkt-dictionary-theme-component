@@ -17,6 +17,8 @@ test("the Ember route and the Rails plugin serve the same /dictionary path", asy
   const page = await read("javascripts/discourse/components/igkt-dictionary.gjs");
   const icon = await read("javascripts/discourse/components/dictionary-header-icon.gjs");
 
+  assert.match(plugin, /required_version: 3\.4\.0/);
+  assert.doesNotMatch(plugin, /required_version: 3\.3\.0/);
   assert.match(plugin, /PATH = "\/dictionary"/);
   assert.match(plugin, /get ::IgktDictionaryRoute::PATH => "igkt_dictionary_route\/page#show"/);
   assert.match(plugin, /get "#\{::IgktDictionaryRoute::PATH\}\/" => "igkt_dictionary_route\/page#show"/);
