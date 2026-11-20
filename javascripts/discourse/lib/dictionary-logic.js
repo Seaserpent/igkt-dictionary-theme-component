@@ -33,13 +33,15 @@ const LIGATURE_FOLDS = [
 
 /**
  * Accent-insensitive, case-insensitive fold used for search.
- * Expands the ligatures above, then removes NFD accents.
+ * Expands the ligatures above, folds ø/Ø to o (the stroke does not
+ * decompose), then removes NFD accents.
  */
 export function fold(s) {
   let text = s || "";
   for (const [pattern, replacement] of LIGATURE_FOLDS) {
     text = text.replace(pattern, replacement);
   }
+  text = text.replace(/[øØ]/g, "o");
   return text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -73,12 +75,14 @@ export function formatTerms(entry, lang) {
  * First letter of the first term in the source language.
  * Leading non-letters (quotes, punctuation) are skipped.
  * Uses the language locale so Swedish å/ä/ö become Å/Ä/Ö.
+ * Locale uppercasing can expand one letter (German ß becomes SS);
+ * the letter bar keeps the first character only.
  */
 export function letterOf(entry, lang) {
   const first = firstTerm(entry, lang);
   const stripped = first.replace(/^[^\p{L}]+/u, "");
   const locale = LANGUAGE_LOCALES[lang] || lang;
-  return stripped ? stripped.charAt(0).toLocaleUpperCase(locale) : "";
+  return stripped ? stripped.charAt(0).toLocaleUpperCase(locale).charAt(0) : "";
 }
 
 /** Term used for sorting: leading non-letters (digits, punctuation) stripped. */
