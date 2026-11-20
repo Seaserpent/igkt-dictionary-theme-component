@@ -4,7 +4,7 @@ import { i18n } from "discourse-i18n";
 
 /**
  * Header icon that opens the dictionary route in-app.
- * The tooltip and accessible name come from the header_link_title setting.
+ * header_link_title is both the tooltip and the accessible name.
  */
 export default class DictionaryHeaderIcon extends Component {
   get title() {
@@ -20,6 +20,7 @@ export default class DictionaryHeaderIcon extends Component {
         @route="dictionary"
         @icon="book"
         @translatedTitle={{this.title}}
+        @translatedAriaLabel={{this.title}}
         class="btn-flat icon"
       />
     </li>
