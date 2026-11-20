@@ -21,7 +21,7 @@ export const MAX_BODY_CHARS = 1_000_000;
 export const FETCH_TIMEOUT_MS = 20_000;
 
 const REMOVED_NOTE_RE = /\b(borttaget|borttagna|removed)\b/i;
-const FENCE_RE = /```(?:([A-Za-z0-9_+-]+)\r?\n)?([\s\S]*?)```/g;
+const FENCE_LANGS = new Set(["", FENCE_LANG, "json", "jsonl"]);
 
 export class DictionaryLoadError extends Error {
   constructor(code, message) {
@@ -133,18 +133,57 @@ export function normalizeEntry(raw) {
   return entry;
 }
 
+function fenceLine(line) {
+  const match = /^[ \t]*(`{3,})(.*)$/.exec(line);
+  if (!match || match[2].includes("`")) {
+    return null;
+  }
+  return { ticks: match[1].length, info: match[2] };
+}
+
+function fenceLanguage(info) {
+  const token = (info.trim().split(/[ \t]+/).filter(Boolean)[0] || "").toLowerCase();
+  if (token && !/^[a-z0-9_+-]+$/.test(token)) {
+    return null;
+  }
+  return token;
+}
+
+/**
+ * Bodies of dictionary fences. A fence ends on its own line of backticks,
+ * so three backticks inside a note do not close it.
+ */
 export function extractFencedBodies(text) {
   const bodies = [];
   if (!text) {
     return bodies;
   }
-  const re = new RegExp(FENCE_RE.source, "g");
-  let match;
-  while ((match = re.exec(text))) {
-    const lang = (match[1] || "").trim().toLowerCase();
-    if (!lang || lang === FENCE_LANG || lang === "json" || lang === "jsonl") {
-      bodies.push(match[2].trim());
+  const lines = String(text).split(/\r?\n/);
+  let open = null;
+  let collected = [];
+  for (const line of lines) {
+    const marker = fenceLine(line);
+    if (!open) {
+      if (!marker) {
+        continue;
+      }
+      const lang = fenceLanguage(marker.info);
+      if (lang == null) {
+        continue;
+      }
+      open = { ticks: marker.ticks, lang };
+      collected = [];
+      continue;
     }
+    if (marker && marker.ticks >= open.ticks && /^[ \t]*$/.test(marker.info)) {
+      if (FENCE_LANGS.has(open.lang)) {
+        bodies.push(collected.join("\n").trim());
+      }
+      open = null;
+      collected = [];
+      continue;
+    }
+    collected.push(line);
   }
   return bodies;
 }
