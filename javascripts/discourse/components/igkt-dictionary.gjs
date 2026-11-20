@@ -14,7 +14,6 @@ import {
   defaultToLanguages,
   firstTerm,
   formatTerms,
-  notesElementId,
   prepareEntries,
 } from "../lib/dictionary-logic";
 import {
@@ -313,8 +312,8 @@ export default class IgktDictionary extends Component {
                     @entry={{item.entry}}
                     @from={{this.from}}
                     @to={{this.to}}
-                    @open={{get this.openIds item.entry.id}}
-                    @toggle={{fn this.toggleNotes item.entry.id}}
+                    @open={{get this.openIds item.entry._notesId}}
+                    @toggle={{fn this.toggleNotes item.entry._notesId}}
                   />
                 {{/if}}
               {{/each}}
@@ -410,7 +409,7 @@ const IgktDictionaryRow = <template>
           type="button"
           class="btn btn-small btn-default igkt-dictionary__notes-toggle"
           aria-expanded={{if @open "true" "false"}}
-          aria-controls={{notesElementId @entry.id}}
+          aria-controls={{@entry._notesId}}
           aria-label={{notesLabel @entry @from @open}}
           {{on "click" (toggleFromButton @toggle)}}
         >
@@ -430,7 +429,7 @@ const IgktDictionaryRow = <template>
   </tr>
   {{#if @entry.notes}}
     <tr
-      id={{notesElementId @entry.id}}
+      id={{@entry._notesId}}
       class="igkt-dictionary__det"
       hidden={{not @open}}
     >

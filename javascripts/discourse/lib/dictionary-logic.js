@@ -48,10 +48,19 @@ export function fold(s) {
     .toLowerCase();
 }
 
-/** DOM id for the notes region of one entry. */
-export function notesElementId(id) {
+/**
+ * DOM id for the notes region of one row.
+ * occurrence is 0 for the first use of an id. A later copy gets its own id
+ * so two rows do not share one notes toggle.
+ */
+export function notesElementId(id, occurrence = 0) {
   const safe = String(id || "entry").replace(/[^A-Za-z0-9_-]/g, "");
-  return `igkt-dictionary-notes-${safe || "entry"}`;
+  const base = `igkt-dictionary-notes-${safe || "entry"}`;
+  const n = Number(occurrence);
+  if (!Number.isInteger(n) || n <= 0) {
+    return base;
+  }
+  return `${base}-dup-${n}`;
 }
 
 export function termsOf(entry, lang) {
@@ -91,9 +100,23 @@ export function sortTerm(entry, lang) {
 }
 
 export function prepareEntries(entries) {
+  const seen = new Map();
+  const used = new Set();
   return entries.map((entry) => {
     const parts = LANGUAGE_ORDER.map((lang) => termsOf(entry, lang).join(" | "));
-    return Object.assign({}, entry, { _fold: fold(parts.join(" | ")) });
+    const id = entry && entry.id;
+    let occurrence = seen.get(id) || 0;
+    seen.set(id, occurrence + 1);
+    let notesId = notesElementId(id, occurrence);
+    while (used.has(notesId)) {
+      occurrence += 1;
+      notesId = notesElementId(id, occurrence);
+    }
+    used.add(notesId);
+    return Object.assign({}, entry, {
+      _fold: fold(parts.join(" | ")),
+      _notesId: notesId,
+    });
   });
 }
 
