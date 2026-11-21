@@ -211,12 +211,16 @@ function render() {
     render();
   };
   document.getElementById("q").oninput = (ev) => {
-    state.q = ev.target.value;
+    const input = ev.target;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    state.q = input.value;
     render();
-    const input = document.getElementById("q");
-    input.focus();
-    const len = input.value.length;
-    input.setSelectionRange(len, len);
+    const next = document.getElementById("q");
+    next.focus();
+    if (typeof start === "number" && typeof end === "number") {
+      next.setSelectionRange(start, end);
+    }
   };
   document.getElementById("to").onclick = (ev) => {
     const btn = ev.target.closest("button[data-to]");

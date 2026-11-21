@@ -36,14 +36,16 @@ A tiny, clearly labelled set of **invented** example entries lives under `javasc
 
 ## Install
 
-Install both pieces. The theme component is the dictionary. The plugin is what makes `/dictionary` survive a direct visit, a bookmark and a refresh. In-app navigation from the header book icon works with the theme alone; a full page load does not.
+Install both pieces on Discourse 3.4.0 or newer. The theme component is the dictionary. The plugin is what makes `/dictionary` survive a direct visit, a bookmark and a refresh. In-app navigation from the header book icon works with the theme alone; a full page load does not.
+
+Discourse 3.3 is not enough. The page imports the named `i18n` translation function, which 3.3 does not provide, and it starts its header icon without the older plugin-API version argument. Both of those arrived in Discourse 3.4.0. The routing plugin records that minimum and will not start on an older forum.
 
 ### 1. Theme component
 
 From git, which is the method that picks up later code updates:
 
 1. **Admin → Customize → Themes → Install → From a git repository**
-2. Paste `https://github.com/Seaserpent/igkt-dictionary-theme-component` (branch `main` once this change is merged, or the review branch until then).
+2. Paste `https://github.com/Seaserpent/igkt-dictionary-theme-component` (branch `main`).
 3. Open the theme the forum actually uses (on IGKT that is **IGKT-default**) and add **IGKT Knot Dictionary** as a theme component.
 4. Set **`data_topic_id`** to the numeric id of the public data topic (see below). Optionally set **`data_url`** as a fallback.
 
@@ -77,11 +79,11 @@ The dictionary shows a clear message if neither data setting is configured, and 
 
 The component does not bundle the dictionary. It loads the list at runtime from the forum. The routing plugin is not involved in that fetch.
 
-**Preferred method:** put the compact word list in **wiki posts of one publicly readable topic** (as many parts as the exporter produces), and set `data_topic_id` to that topic’s id. The component reads `/t/{id}.json` and then `/raw/{id}/{post_number}` for the post numbers in that topic (same origin, so there is no CORS issue). Only posts that contain an `igkt-dictionary` fenced code block are parsed; ordinary replies are ignored.
+**Preferred method:** put the compact word list in **wiki posts of one publicly readable topic** (as many parts as the exporter produces), and set `data_topic_id` to that topic’s id. The component reads `/t/{id}.json` and then `/raw/{id}/{post_number}` for the post numbers in that topic (same origin, so there is no CORS issue). A post is parsed when it contains an `igkt-dictionary`, `json` or `jsonl` fenced code block, a fenced block with no language tag, or a body that is raw JSON (a JSON array, a JSON object with an `entries` array, or JSONL with one object per line). Ordinary replies that contain none of those are ignored.
 
 **Why not an attachment or a theme upload?** Official Discourse hosting often serves uploads from an S3/CDN origin that does not send CORS headers. A browser `fetch` of that file from the forum can fail. A JSON attachment also needs `json` in `authorized_extensions`. A post body fetched same-origin avoids both problems, and a moderator can edit a wiki post without admin rights.
 
-**Fallback:** `data_url` may point at a same-origin path (or any URL that returns a JSON array or an `igkt-dictionary` document). If both settings are filled, the topic is tried first and the URL is used if the topic cannot be read.
+**Fallback:** `data_url` may point at a same-origin path, or any URL whose body uses one of those same formats. If both settings are filled, the topic is tried first and the URL is used if the topic cannot be read.
 
 ### What to create
 
@@ -139,9 +141,9 @@ If you prefer the existing **Custom Header Links** component instead of the buil
 
 ## Sources
 
-Source ids in `ordbok.json` (`sources[lang][term] = [ids]`) are mapped to display names in one place:
+Source ids in `ordbok.json` (`sources[lang][term] = [ids]`) are kept on each entry when the export includes them. The dictionary page does not look those ids up, and it does not show them in the table. Visitors see the footer credit from the `sources_note` setting.
 
-`javascripts/discourse/lib/ordbok-sources.js`
+`javascripts/discourse/lib/ordbok-sources.js` is an editor reference for the same ids and the labels below. The theme never imports that file, so editing it does not change the page. It is kept so the list has one place in the code to check when an id is added.
 
 | Id | Label |
 | --- | --- |
@@ -156,9 +158,9 @@ Source ids in `ordbok.json` (`sources[lang][term] = [ids]`) are mapped to displa
 | `virittaja` | Virittäjä |
 | `niclas`, `egen` | IGKT (own additions) |
 
-`virittaja` is already in the map. When Finnish terms from Virittäjä are added under that id, they pick up the label with no other code change.
+`virittaja` is already in that reference list and in the default sources note. Adding Finnish terms under that id does not need a code change for the footnote to keep crediting Virittäjä.
 
-The default **sources note** (editable in settings) credits the sources listed under Licence, including Virittäjä — a condition of their written permission, covering incoming Finnish terms.
+The default **sources note** (editable in settings) credits the sources listed under Licence, including Virittäjä, a condition of their written permission, covering incoming Finnish terms.
 
 ## Why a plugin sits next to the theme
 
