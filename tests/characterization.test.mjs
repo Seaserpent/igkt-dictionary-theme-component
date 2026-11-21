@@ -28,6 +28,45 @@ test("search folds accents, case and the supported ligatures", () => {
   assert.equal(logic.notesElementId("bad id"), "igkt-dictionary-notes-badid");
 });
 
+test("search folds o with stroke to o", () => {
+  assert.equal(logic.fold("ø"), "o");
+  assert.equal(logic.fold("Ø"), "o");
+  const invented = logic.prepareEntries([{
+    id: "example-stroke",
+    category: "term",
+    terms: { en: ["øpaper moon knot (example)"] },
+  }]);
+  const model = logic.buildTableModel({
+    entries: invented,
+    from: "en",
+    to: ["sv"],
+    cat: "",
+    query: "opaper moon",
+    letter: "",
+  });
+  assert.deepEqual(model.rows.map((entry) => entry.id), ["example-stroke"]);
+});
+
+test("letter bar keeps one character when German ß uppercases to SS", () => {
+  const entry = {
+    id: "example-sharp-s",
+    category: "term",
+    terms: { de: ["ßpaper (Beispiel)"] },
+  };
+  assert.equal(logic.letterOf(entry, "de"), "S");
+  const model = logic.buildTableModel({
+    entries: logic.prepareEntries([entry]),
+    from: "de",
+    to: ["en"],
+    cat: "",
+    query: "",
+    letter: "",
+  });
+  assert.deepEqual(model.letters, ["S"]);
+  const anchor = model.items.find((item) => item.type === "anchor");
+  assert.equal(anchor.letter, "S");
+});
+
 test("search finds an invented term in another language", () => {
   const model = logic.buildTableModel({ entries: prepared, from: "en", to: ["sv"], cat: "", query: "bla sillknop", letter: "" });
   assert.deepEqual(model.rows.map((entry) => entry.id), ["example-0001"]);

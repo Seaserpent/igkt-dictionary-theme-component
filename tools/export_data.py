@@ -81,7 +81,13 @@ def normalize_entry(raw: dict) -> dict:
             elif raw.get(lang):
                 # Fallback: comma-separated language field (legacy).
                 terms[lang] = [t.strip() for t in str(raw[lang]).split(",") if t.strip()]
-    terms = {lang: list(val) for lang, val in terms.items() if val}
+    # Copy lists only. list() on a string splits the term into characters.
+    # This matches dictionary-data.js, which keeps array values and drops the rest.
+    terms = {
+        lang: list(val)
+        for lang, val in terms.items()
+        if isinstance(val, list) and val
+    }
     entry = {
         "id": raw.get("id"),
         "category": raw.get("category") or "term",
