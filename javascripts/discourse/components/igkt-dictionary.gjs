@@ -421,16 +421,18 @@ const IgktDictionaryRow = <template>
     class="igkt-dictionary__row{{if @entry.notes ' has'}}{{if @open ' is-open'}}"
     {{on "click" (toggleFromRow @entry.notes @toggle)}}
   >
-    <td class="igkt-dictionary__src" data-l={{uppercase @from}}>
+    <td class="igkt-dictionary__src" lang={{@from}}>
+      <span class="igkt-dictionary__lang" lang="en">{{uppercase @from}}</span>
       {{#if (firstTerm @entry @from)}}
         {{formatTerms @entry @from}}
       {{else}}
         <span class="igkt-dictionary__dash">–</span>
       {{/if}}
-      <span class="igkt-dictionary__cat">{{@entry.category}}</span>
+      <span class="igkt-dictionary__cat" lang="en">{{@entry.category}}</span>
       {{#if @entry.notes}}
         <button
           type="button"
+          lang="en"
           class="btn btn-small btn-default igkt-dictionary__notes-toggle"
           aria-expanded={{if @open "true" "false"}}
           aria-controls={{@entry._notesId}}
@@ -442,7 +444,8 @@ const IgktDictionaryRow = <template>
       {{/if}}
     </td>
     {{#each @to as |lang|}}
-      <td data-l={{uppercase lang}}>
+      <td lang={{lang}}>
+        <span class="igkt-dictionary__lang" lang="en">{{uppercase lang}}</span>
         {{#if (firstTerm @entry lang)}}
           {{formatTerms @entry lang}}
         {{else}}

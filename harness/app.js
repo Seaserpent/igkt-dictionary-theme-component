@@ -148,13 +148,13 @@ function render() {
       const has = e.notes && e.notes.length;
       const term = firstTerm(e, state.from) || "this entry";
       let html = `<tr class="igkt-dictionary__row${has ? " has" : ""}${open ? " is-open" : ""}" data-id="${esc(e.id)}" data-notes-key="${esc(notesId)}">`;
-      html += `<td class="igkt-dictionary__src" data-l="${state.from.toUpperCase()}">${dashOrTerms(e, state.from)}<span class="igkt-dictionary__cat">${esc(e.category)}</span>`;
+      html += `<td class="igkt-dictionary__src" lang="${esc(state.from)}"><span class="igkt-dictionary__lang" lang="en">${esc(state.from.toUpperCase())}</span>${dashOrTerms(e, state.from)}<span class="igkt-dictionary__cat" lang="en">${esc(e.category)}</span>`;
       if (has) {
-        html += `<button type="button" class="btn btn-small btn-default igkt-dictionary__notes-toggle" data-notes="${esc(notesId)}" aria-expanded="${open ? "true" : "false"}" aria-controls="${esc(notesId)}" aria-label="${esc((open ? "Hide notes for " : "Show notes for ") + term)}">${open ? "Hide notes" : "Notes"}</button>`;
+        html += `<button type="button" lang="en" class="btn btn-small btn-default igkt-dictionary__notes-toggle" data-notes="${esc(notesId)}" aria-expanded="${open ? "true" : "false"}" aria-controls="${esc(notesId)}" aria-label="${esc((open ? "Hide notes for " : "Show notes for ") + term)}">${open ? "Hide notes" : "Notes"}</button>`;
       }
       html += `</td>`;
       html += state.to
-        .map((l) => `<td data-l="${l.toUpperCase()}">${dashOrTerms(e, l)}</td>`)
+        .map((l) => `<td lang="${esc(l)}"><span class="igkt-dictionary__lang" lang="en">${esc(l.toUpperCase())}</span>${dashOrTerms(e, l)}</td>`)
         .join("");
       html += `</tr>`;
       if (has) {

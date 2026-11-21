@@ -172,7 +172,9 @@ Login-required forums still redirect anonymous visitors to login, because the co
 
 ## Layout, keyboard and bad data
 
-On `/dictionary` the template calls Discourse’s `hideApplicationSidebar` helper, which removes the sidebar while the page is shown and puts it back on the way out. The header, the rest of the forum, and the “Powered by Discourse” credit stay. A `dictionary-page` body class is a fallback for the column width: it zeroes `--d-sidebar-width` and hides `.sidebar-wrapper` only while that class is present. It does not restyle other pages and it does not hide the credit.
+On `/dictionary` the template calls Discourse’s `hideApplicationSidebar` helper, which removes the sidebar while the page is shown and puts it back on the way out. The header, the rest of the forum, and the “Powered by Discourse” credit stay. A `dictionary-page` body class is a fallback for the column width: it zeroes `--d-sidebar-width` and hides `.sidebar-wrapper` only while that class is present. It does not rename Discourse’s grid areas (`content` and `below-content`), so the credit stays under the dictionary. Below Discourse’s `md` breakpoint it leaves the single content column in place. It does not restyle other pages and it does not hide the credit.
+
+On a narrow screen the column headings are hidden and each cell shows its language code as text in the page. Each cell has a `lang` attribute for that language. The code is hidden on a wide screen, where the column headings remain.
 
 Language toggles, the letter bar and note disclosure are buttons. Notes use `aria-expanded` and `aria-controls`, and Enter or Space activates the focused control. The selected letter and the selected translation columns use `aria-pressed`.
 
