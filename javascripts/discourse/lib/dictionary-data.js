@@ -336,12 +336,8 @@ export function assembleParts(partResults) {
     for (let i = 1; i <= expected; i++) {
       entries.push(...byPart.get(i).entries);
     }
-    // Also include any un-numbered payloads (for example a later full JSON paste).
-    for (const p of usable) {
-      if (p.part == null) {
-        entries.push(...p.entries);
-      }
-    }
+    // The numbered parts are complete. Leave out unnumbered posts, such as
+    // a later paste of the whole list, so those terms are not added twice.
     return entries;
   }
   const entries = [];

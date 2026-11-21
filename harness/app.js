@@ -143,14 +143,14 @@ function render() {
         return `<tr class="igkt-dictionary__anchor"><td colspan="${state.to.length + 1}">${esc(item.letter)}</td></tr>`;
       }
       const e = item.entry;
-      const open = !!state.openIds[e.id];
+      const notesId = e._notesId || notesElementId(e.id);
+      const open = !!state.openIds[notesId];
       const has = e.notes && e.notes.length;
-      const notesId = notesElementId(e.id);
       const term = firstTerm(e, state.from) || "this entry";
-      let html = `<tr class="igkt-dictionary__row${has ? " has" : ""}${open ? " is-open" : ""}" data-id="${esc(e.id)}">`;
+      let html = `<tr class="igkt-dictionary__row${has ? " has" : ""}${open ? " is-open" : ""}" data-id="${esc(e.id)}" data-notes-key="${esc(notesId)}">`;
       html += `<td class="igkt-dictionary__src" data-l="${state.from.toUpperCase()}">${dashOrTerms(e, state.from)}<span class="igkt-dictionary__cat">${esc(e.category)}</span>`;
       if (has) {
-        html += `<button type="button" class="btn btn-small btn-default igkt-dictionary__notes-toggle" data-notes="${esc(e.id)}" aria-expanded="${open ? "true" : "false"}" aria-controls="${esc(notesId)}" aria-label="${esc((open ? "Hide notes for " : "Show notes for ") + term)}">${open ? "Hide notes" : "Notes"}</button>`;
+        html += `<button type="button" class="btn btn-small btn-default igkt-dictionary__notes-toggle" data-notes="${esc(notesId)}" aria-expanded="${open ? "true" : "false"}" aria-controls="${esc(notesId)}" aria-label="${esc((open ? "Hide notes for " : "Show notes for ") + term)}">${open ? "Hide notes" : "Notes"}</button>`;
       }
       html += `</td>`;
       html += state.to
@@ -245,7 +245,7 @@ function render() {
     const id = button
       ? button.getAttribute("data-notes")
       : row && !ev.target.closest("button, a")
-        ? row.getAttribute("data-id")
+        ? row.getAttribute("data-notes-key")
         : "";
     if (!id) return;
     state.openIds[id] = !state.openIds[id];

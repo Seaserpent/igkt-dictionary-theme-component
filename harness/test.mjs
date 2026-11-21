@@ -3,4 +3,5 @@ import "../tests/characterization.test.mjs";
 import "../tests/dictionary-data.test.mjs";
 import "../tests/post-access.test.mjs";
 import "../tests/dictionary-fence.test.mjs";
+import "../tests/duplicate-parts.test.mjs";
 import "../tests/route-contract.test.mjs";
