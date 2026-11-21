@@ -15,6 +15,7 @@ import {
   firstTerm,
   formatTerms,
   prepareEntries,
+  rowClickTogglesNotes,
 } from "../lib/dictionary-logic";
 import {
   applyDictionaryLoad,
@@ -234,9 +235,13 @@ export default class IgktDictionary extends Component {
               </select>
             </label>
 
-            <label>
-              {{i18n (themePrefix "to_label")}}
-              <span class="igkt-dictionary__to">
+            <div class="igkt-dictionary__field">
+              <span id="igkt-dictionary-to-label">{{i18n (themePrefix "to_label")}}</span>
+              <span
+                class="igkt-dictionary__to"
+                role="group"
+                aria-labelledby="igkt-dictionary-to-label"
+              >
                 {{#each this.languageOrder as |lang|}}
                   <button
                     type="button"
@@ -251,7 +256,7 @@ export default class IgktDictionary extends Component {
                   </button>
                 {{/each}}
               </span>
-            </label>
+            </div>
 
             <label>
               {{i18n (themePrefix "category_label")}}
@@ -404,8 +409,7 @@ function toggleFromRow(hasNotes, toggle) {
     return () => {};
   }
   return (event) => {
-    const target = event.target;
-    if (target && target.closest && target.closest("button, a")) {
+    if (!rowClickTogglesNotes(event)) {
       return;
     }
     toggle(event);

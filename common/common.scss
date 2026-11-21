@@ -70,7 +70,8 @@ body.dictionary-page {
     align-items: flex-end;
     margin-bottom: 0.75em;
 
-    label {
+    label,
+    .igkt-dictionary__field {
       display: flex;
       flex-direction: column;
       gap: 0.25em;

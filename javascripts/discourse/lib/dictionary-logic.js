@@ -63,6 +63,28 @@ export function notesElementId(id, occurrence = 0) {
   return `${base}-dup-${n}`;
 }
 
+/**
+ * A row click toggles notes unless it lands on a button or link,
+ * or the visitor is selecting the knot name to copy it.
+ */
+export function rowClickTogglesNotes(event) {
+  const target = event && event.target;
+  if (
+    target &&
+    typeof target.closest === "function" &&
+    target.closest("button, a")
+  ) {
+    return false;
+  }
+  if (typeof getSelection === "function") {
+    const selection = getSelection();
+    if (selection && selection.isCollapsed === false) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function termsOf(entry, lang) {
   const terms = entry?.terms?.[lang];
   return Array.isArray(terms) ? terms : [];
