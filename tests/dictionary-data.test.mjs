@@ -201,6 +201,25 @@ test("malformed, gapped and oversized dictionary payloads are reported", async (
     data.defaultFetchText("/slow", hanging, { timeoutMs: 20 }),
     (error) => error.code === "unavailable" && /timed out/.test(error.message)
   );
+
+  const controller = new AbortController();
+  let sawAbort = false;
+  const cancellable = (_path, options) =>
+    new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => {
+        sawAbort = true;
+        const error = new Error("aborted");
+        error.name = "AbortError";
+        reject(error);
+      });
+    });
+  const pending = data.defaultFetchText("/leave", cancellable, {
+    signal: controller.signal,
+    timeoutMs: 5000,
+  });
+  controller.abort();
+  await assert.rejects(pending, (error) => error.name === "AbortError" && error.code !== "unavailable");
+  assert.equal(sawAbort, true);
   const huge = async () => ({
     ok: true,
     status: 200,
@@ -222,6 +241,57 @@ test("an out-of-range character reference in a link does not blank the footnote"
   const blocked = sanitizeSourcesHtml('<a href="javascript&#x110000;:alert(1)">x</a>');
   assert.doesNotMatch(blocked, /href=/);
   assert.doesNotMatch(blocked, /javascript/i);
+});
+
+test("a load that finishes after the page is left is not applied", async () => {
+  const alive = { isDestroying: false, isDestroyed: false };
+  let ready = null;
+  let failed = null;
+  await data.applyDictionaryLoad(alive, Promise.resolve([{ id: "example-0001" }]), {
+    ready: (entries) => {
+      ready = entries;
+    },
+    failed: (error) => {
+      failed = error;
+    },
+  });
+  assert.equal(ready[0].id, "example-0001");
+  assert.equal(failed, null);
+
+  const left = { isDestroying: true, isDestroyed: false };
+  let applied = false;
+  let resolveLate;
+  const late = new Promise((resolve) => {
+    resolveLate = resolve;
+  });
+  const settled = data.applyDictionaryLoad(left, late, {
+    ready: () => {
+      applied = true;
+    },
+    failed: () => {
+      applied = true;
+    },
+  });
+  left.isDestroyed = true;
+  resolveLate([{ id: "example-0001" }]);
+  await settled;
+  assert.equal(applied, false);
+
+  const open = { isDestroying: false, isDestroyed: false };
+  let failure = null;
+  const abort = new Error("The dictionary data request was aborted.");
+  abort.name = "AbortError";
+  await data.applyDictionaryLoad(open, Promise.reject(abort), {
+    ready: () => {
+      failure = "ready";
+    },
+    failed: (error) => {
+      failure = error;
+    },
+  });
+  assert.equal(failure, null);
+  assert.equal(data.shouldApplyDictionaryLoad(open, Object.assign(new Error("HTTP 404"), { code: "unavailable" })), true);
+  assert.equal(data.shouldApplyDictionaryLoad({ isDestroying: false, isDestroyed: true }), false);
 });
 
 test("sources footnote keeps credits and drops active markup", async () => {

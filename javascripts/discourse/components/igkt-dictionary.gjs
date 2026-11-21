@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { tracked } from "@glimmer/tracking";
+import { cached, tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { on } from "@ember/modifier";
 import { fn } from "@ember/helper";
@@ -17,6 +17,7 @@ import {
   prepareEntries,
 } from "../lib/dictionary-logic";
 import {
+  applyDictionaryLoad,
   defaultFetchJson,
   defaultFetchText,
   loadDictionary,
@@ -37,6 +38,7 @@ export default class IgktDictionary extends Component {
 
   languageOrder = LANGUAGE_ORDER;
   languageNames = LANGUAGE_NAMES;
+  #loadAbort = typeof AbortController === "undefined" ? null : new AbortController();
 
   constructor() {
     super(...arguments);
@@ -48,26 +50,42 @@ export default class IgktDictionary extends Component {
     this.#load();
   }
 
+  // Cancel the word-list request when the visitor leaves /dictionary.
+  willDestroy() {
+    super.willDestroy();
+    if (this.#loadAbort) {
+      this.#loadAbort.abort();
+    }
+  }
+
   async #load() {
     const topicId =
       typeof settings !== "undefined" ? settings.data_topic_id || "" : "";
     const url = typeof settings !== "undefined" ? settings.data_url || "" : "";
-    try {
-      const entries = await loadDictionary({
+    const signal = this.#loadAbort ? this.#loadAbort.signal : undefined;
+    const fetchOptions = signal ? { signal } : {};
+    await applyDictionaryLoad(
+      this,
+      loadDictionary({
         topicId,
         url,
-        fetchJson: (path) => defaultFetchJson(path),
-        fetchText: (path) => defaultFetchText(path),
-      });
-      this.entries = entries;
-      this.loadWarning =
-        entries && Array.isArray(entries.warnings) ? entries.warnings.join(" ") : "";
-      this.loadState = "ready";
-    } catch (err) {
-      const code = err && err.code;
-      this.loadError = (err && err.message) || String(err);
-      this.loadState = code === "unconfigured" ? "unconfigured" : "error";
-    }
+        fetchJson: (path) => defaultFetchJson(path, undefined, fetchOptions),
+        fetchText: (path) => defaultFetchText(path, undefined, fetchOptions),
+      }),
+      {
+        ready: (entries) => {
+          this.entries = entries;
+          this.loadWarning =
+            entries && Array.isArray(entries.warnings) ? entries.warnings.join(" ") : "";
+          this.loadState = "ready";
+        },
+        failed: (err) => {
+          const code = err && err.code;
+          this.loadError = (err && err.message) || String(err);
+          this.loadState = code === "unconfigured" ? "unconfigured" : "error";
+        },
+      }
+    );
   }
 
   get prepared() {
@@ -82,6 +100,8 @@ export default class IgktDictionary extends Component {
     return this.entries.length;
   }
 
+  // Cached so opening notes, which does not change the filter, keeps the same row objects.
+  @cached
   get model() {
     return buildTableModel({
       entries: this.prepared,
@@ -302,7 +322,7 @@ export default class IgktDictionary extends Component {
               </tr>
             </thead>
             <tbody>
-              {{#each this.model.items as |item|}}
+              {{#each this.model.items key="rowKey" as |item|}}
                 {{#if (eq item.type "anchor")}}
                   <tr class="igkt-dictionary__anchor">
                     <td colspan={{add this.to.length 1}}>{{item.letter}}</td>

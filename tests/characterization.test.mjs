@@ -80,6 +80,26 @@ test("Swedish letter anchors are unique, ordered, and include Å Ä Ö after Z",
   assert.deepEqual(anchors.slice(-4), ["Z", "Å", "Ä", "Ö"]);
 });
 
+test("rebuilt table rows keep a stable key for the same entry", () => {
+  const args = { entries: prepared, from: "en", to: ["sv"], cat: "", query: "", letter: "" };
+  const first = logic.buildTableModel(args);
+  const second = logic.buildTableModel(args);
+  const entryItem = (model) =>
+    model.items.find((item) => item.type === "entry" && item.entry.id === "example-0001");
+  const firstEntry = entryItem(first);
+  const secondEntry = entryItem(second);
+  assert.notEqual(firstEntry, secondEntry);
+  assert.equal(firstEntry.rowKey, "entry:example-0001");
+  assert.equal(secondEntry.rowKey, firstEntry.rowKey);
+  const anchors = first.items.filter((item) => item.type === "anchor");
+  assert.ok(anchors.length > 0);
+  assert.ok(anchors.every((item) => item.rowKey === `anchor:${item.letter}`));
+  const doubled = logic.buildTableModel({ ...args, entries: prepared.concat([prepared[0]]) });
+  const keys = doubled.items.map((item) => item.rowKey);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(keys.filter((key) => key === "entry:example-0001" || key === "entry:example-0001#2").length, 2);
+});
+
 test("category, missing-language and column-selection behaviour is preserved", () => {
   const filtered = logic.filterAndSort({ entries: prepared, from: "en", cat: "bend", query: "", letter: "" });
   assert.ok(filtered.rows.length > 0);

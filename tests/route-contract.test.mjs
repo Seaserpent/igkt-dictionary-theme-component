@@ -40,4 +40,9 @@ test("the Ember route and the Rails plugin serve the same /dictionary path", asy
   assert.match(page, /sanitizeSourcesHtml/);
   assert.doesNotMatch(page, /role=\{\{if @entry\.notes "button"\}\}/);
   assert.match(icon, /header_link_title/);
+  assert.match(page, /applyDictionaryLoad/);
+  assert.match(page, /willDestroy/);
+  assert.match(page, /#loadAbort/);
+  assert.match(page, /@cached/);
+  assert.match(page, /key="rowKey"/);
 });
