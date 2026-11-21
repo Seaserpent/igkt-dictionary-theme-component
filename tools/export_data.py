@@ -50,7 +50,7 @@ POST1_INTRO = """# IGKT Knot Dictionary data (part {part} of {parts})
 This topic holds the word list for the Knot Dictionary at `/dictionary`.
 The word list is **not** covered by the theme component's MIT licence; it stays on the IGKT forum.
 
-Sources: Wikidata (CC0); Wiktionary and Finnish Wikipedia (CC BY-SA, with attribution); J. Ezelius and Virittäjä (used with permission for the IGKT forum); Hjalmar Öhrvall, *Om knutar* (1916); Witcomb (1883); French review by Jean Bernard de Runz (JeanB). No machine translation is used.
+Sources: Wikidata (CC0); Wiktionary and Finnish Wikipedia (CC BY-SA, with attribution); J. Ezelius and Virittäjä (used with permission for the IGKT forum); Hjalmar Öhrvall, *Om knutar* (1916); Witcomb (1883); Sam Svensson, *Handbok i sjömansarbete* (1941); French review by Jean Bernard de Runz (JeanB). No machine translation is used.
 
 Please do not add ordinary replies here. To update the list, edit the fenced `{fence}` blocks below. Moderators can edit this topic when it is a wiki.
 

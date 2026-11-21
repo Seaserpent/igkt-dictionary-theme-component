@@ -14,6 +14,7 @@ export const SOURCE_LABELS = {
   ohrvall: "Öhrvall (1916)",
   ezelius: "Ezelius",
   witcomb1883: "Witcomb (1883)",
+  svensson1941: "Svensson (1941)",
   jeanb: "Jean Bernard de Runz (JeanB)",
   virittaja: "Virittäjä",
   niclas: "IGKT",

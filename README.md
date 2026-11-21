@@ -27,6 +27,7 @@ The **theme component code** in this repository is released under the [MIT Licen
 - Virittäjä, used with permission for the IGKT forum (credit this source even before those Finnish terms are added)
 - Hjalmar Öhrvall, *Om knutar* (1916)
 - Witcomb (1883)
+- Sam Svensson, *Handbok i sjömansarbete* (1941)
 - French review by Jean Bernard de Runz (JeanB)
 
 No machine translation is used.
@@ -150,6 +151,7 @@ Source ids in `ordbok.json` (`sources[lang][term] = [ids]`) are mapped to displa
 | `ohrvall` | Öhrvall (1916) |
 | `ezelius` | Ezelius |
 | `witcomb1883` | Witcomb (1883) |
+| `svensson1941` | Svensson (1941) |
 | `jeanb` | Jean Bernard de Runz (JeanB) |
 | `virittaja` | Virittäjä |
 | `niclas`, `egen` | IGKT (own additions) |
